@@ -1,0 +1,1 @@
+Za chwilę rozpocznie się sesja eksperymentalna części B. Twoim zadaniem jest jak najszybsze połączenie kółek we wzór: 1-A-2-B-3-C-…-13-L. Wyniki będą zapisane do pliku. Gdy będziesz gotowy/a kliknij spację

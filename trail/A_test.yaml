@@ -1,7 +1,7 @@
 MAP_SIZE: 10
 POINTS: 8
 POINT_1: [0,0]
-POINT_2: [3,0]
+POINT_2: [1,0]
 POINT_3: [5,1]
 POINT_4: [9,2]
 POINT_5: [7,4]

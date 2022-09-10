@@ -4,6 +4,7 @@ import csv
 import random
 from os.path import join
 from statistics import mean
+from collections import OrderedDict
 
 import yaml
 from psychopy import visual, event, logging, gui, core, colors
@@ -11,19 +12,32 @@ from psychopy import visual, event, logging, gui, core, colors
 from misc.screen_misc import get_screen_res, get_frame_rate
 from itertools import combinations_with_replacement, product
 
+''' 
+mapowanie punktow z pliku konfiguracyjnego na ekran uzytkownika
+    :param Table: tablica z kolkami
+    :param Text: tablica z bodzcami tekstowymi
+    :param filename: sciezka do pliku z punktami
+    :param conf: sciezka do pliku konfiguracyjnego
+    :return: message
+'''
 def ready_coord(Table, Text, filename, conf):
     global SQUARE_SIZE
     global SCREEN_RES
+    # przesuniecie punktow
     offset_x = SQUARE_SIZE / 2
     offset_y = SQUARE_SIZE / 2
+    # ladowanie pliku
     points = yaml.safe_load(open(filename, encoding='utf-8'))
     map_size = points['MAP_SIZE'] - 1
     n = points['POINTS']
+    # przydzielanie wspolrzednych do punktow
     for i in range(1, n + 1):
         new_pos = []
         new_pos = points["POINT_" + str(i)]
+        # jezeli punkt wychodzi poza obszar mamy - podnosimy wyjatek i konczymy program
         if new_pos[0] > map_size or new_pos[1] > map_size:
             abort_with_error("Wrong coordinates in the: " + str(filename) + " : " + str(new_pos))
+        # zapisanie nowych pozycji dla punktow
         new_pos[0] = (int)((new_pos[0] / map_size) * SQUARE_SIZE) - offset_x - conf["QUE_RADIUS"]/8
         new_pos[1] = (int)((new_pos[1] / map_size) * SQUARE_SIZE) - offset_y - conf["QUE_RADIUS"]/8
         Table[i - 1].pos = new_pos
@@ -50,23 +64,6 @@ def save_beh_results():
         beh_writer = csv.writer(beh_file)
         beh_writer.writerows(RESULTS)
     logging.flush()
-
-'''
-def show_image(win, file_name, size, key='f7'):
-    """
-    Show instructions in a form of an image.
-    """
-    image = visual.ImageStim(win=win, image=file_name,
-                             interpolate=True, size=size)
-    image.draw()
-    win.flip()
-    clicked = event.waitKeys(keyList=[key, 'return', 'space'])
-    if clicked == [key]:
-        logging.critical(
-            'Experiment finished by user! {} pressed.'.format(key[0]))
-        exit(0)
-    win.flip()'''
-
 
 def read_text_from_file(file_name, insert=''):
     """
@@ -109,11 +106,15 @@ def show_info(win, file_name, mouse, insert=''):
     """
     msg = read_text_from_file(file_name, insert=insert)
     msg = visual.TextStim(win, color='white', text=msg,
-                          height=29, wrapWidth=SCREEN_RES['width'])
+                          height=30, wrapWidth=SCREEN_RES['width'])
     msg.draw()
     win.flip()
     timer = core.CountdownTimer(10) # czekamy 10 sekund na input od uzytkownika
     while timer.getTime() > 0:
+        key = event.getKeys(keyList=['f7','esc'])
+        if key == ['f7'] or key == ['esc']:
+            abort_with_error(
+                'Experiment finished by user on info screen! F7 pressed.')
         buttons, times = mouse.getPressed(getTime=True)
         if buttons[0] and times[0] > 0.1:
             win.flip()
@@ -121,12 +122,6 @@ def show_info(win, file_name, mouse, insert=''):
             return
     mouse.clickReset(buttons = [0])
     win.flip()
-    '''
-    key = event.getKeys(maxWait = 10, keyList=['f7', 'return', 'space', 'left', 'right'])
-    if key == ['f7']:
-        abort_with_error(
-            'Experiment finished by user on info screen! F7 pressed.')
-    '''
 
 def abort_with_error(err):
     """
@@ -145,9 +140,13 @@ def main():
     global PART_ID  # PART_ID is used in case of error on @atexit, that's why it must be global
     global SQUARE_SIZE
     global SCREEN_RES
-    SCREEN_RES = get_screen_res()
+    SCREEN_RES = OrderedDict()
+    SCREEN_RES['width'] = 1650
+    SCREEN_RES['height'] = 1040
+
+    #SCREEN_RES = get_screen_res() # pobierz rozdzielczosc ekranu 
     print(SCREEN_RES)
-    SQUARE_SIZE = SQUARE_SIZE * SCREEN_RES.get("height")
+    SQUARE_SIZE = SQUARE_SIZE * SCREEN_RES.get("height") # oblicz rozmiar kwadratu
     # === Dialog popup ===
     info={'IDENTYFIKATOR': '', u'P\u0141EC': ['M', "K"], 'WIEK': '20'}
     dictDlg=gui.DlgFromDict(
@@ -281,11 +280,11 @@ def run_trial(win, conf, mouse, Circles, Texts, max_num, max_time, part):
     global RESULTS
     global RESULTS
     cur_stim = 0 # index of current stimuli
-    error_mes =  visual.TextStim(win, color='black', text='Naciśnięto blędne koło', 
-    height=27, pos = [0, 0 - (SQUARE_SIZE * 1.2)//2]) # wiadomosc o bledzie
-    start_mes = visual.TextStim(win, color='black', text='Aby zacząć eksperyment należy kliknij kółko z numerem 1', 
-    height=27, pos = [0, 0 - (SQUARE_SIZE * 1.2)//2]) # wiadomosc powitalna
-    mess_square = visual.Rect(win = win, size = [SQUARE_SIZE * 0.8, SQUARE_SIZE * 0.08], fillColor = 'yellow',pos = [0, 0 - (SQUARE_SIZE * 1.2)//2])
+    error_mes =  visual.TextStim(win, color='black', text='Nie naciśnięto wlaśćiwego koła', 
+    height=28, pos = [0, 0 - (SQUARE_SIZE * 1.12)//2]) # wiadomosc o bledzie
+    start_mes = visual.TextStim(win, color='black', text='Aby zacząć eksperyment należy kliknąć kółko z numerem 1', 
+    height=28, pos = [0, 0 - (SQUARE_SIZE * 1.12)//2]) # wiadomosc powitalna
+    mess_square = visual.Rect(win = win, size = [SQUARE_SIZE * 0.95, SQUARE_SIZE * 0.09], fillColor = 'yellow',pos = [0, 0 - (SQUARE_SIZE * 1.12)//2])
     timer = core.CountdownTimer(0) # timer dla wyswietlania error message
     win.flip()
     # === Start trial ===
@@ -293,11 +292,12 @@ def run_trial(win, conf, mouse, Circles, Texts, max_num, max_time, part):
     clock = core.Clock()
     # make sure, that clock will be reset exactly when stimuli will be drawn
     win.callOnFlip(clock.reset)
+
     while (cur_stim < max_num):      
         # jestli czas uplynal, zakoncz aktualna probe
         if clock.getTime() > max_time:
             return 0 # czas rowny 0 oznacza, ze proba nie zostala ukonczona
-        draw_SQUARE(win)
+        draw_SQUARE(win) # narysuj kwadrat
         # narysuj bodzce od 0 do cur_stim - 1
         for i in range(0, max_num):
             if i < cur_stim:
@@ -311,6 +311,7 @@ def run_trial(win, conf, mouse, Circles, Texts, max_num, max_time, part):
             mess_square.draw()
             start_mes.draw()
             clock.reset()
+        # narysuj wiadomosc o bledzie, jesli licznik nie jest wyzerowany
         if timer.getTime() > 0:
             mess_square.draw()
             error_mes.draw()
@@ -330,26 +331,22 @@ def run_trial(win, conf, mouse, Circles, Texts, max_num, max_time, part):
                 RESULTS.append([PART_ID, 'Part_' + part + '_point_' + str(cur_stim), clock.getTime()])
                 # zresetuj czas myszy
                 mouse.clickReset(buttons = [0])
-        # jedno nacisniecie jest rejestrowane wiecej niz jeden raz, dlatego sprawdzamy czy minela przynajmniej jedna sekunda 
-        # od ostatniego klikniecia
-            elif times[0] > 0.3:
+        # jedno nacisniecie jest rejestrowane wiecej niz jeden raz, dlatego sprawdzamy ile minelo od ostatniego klikniecia
+            elif times[0] > 0.15:
                 timer = core.CountdownTimer(3)
+
+        # wyjscie z eksperymentu
+        key = event.getKeys(keyList=['f7','esc'])
+        if key == ['f7'] or key == ['esc']:
+            abort_with_error(
+                'Experiment finished by user on info screen! F7 pressed.')
                 
     t = clock.getTime()
     return t
 
-    return key_pressed, rt  # return all data collected during trial
-
 if __name__ == '__main__':
     PART_ID=''
     SCREEN_RES = None
-    SQUARE_SIZE = 0.75
+    SQUARE_SIZE = 0.75 # rozmiar kwadratu na ktorym bede wyswietlane bodzce 
     main()
 
-
-''' if not reaction:  # no reaction during stim time, allow to answer after that
-    question_frame.draw()
-    question_label.draw()
-    win.flip()
-    reaction=event.waitKeys(keyList=list(
-        conf['REACTION_KEYS']), maxWait=conf['REACTION_TIME'], timeStamped=clock)'''

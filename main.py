@@ -213,7 +213,7 @@ def main():
     # B Training
     B_test_texts = []
     for i in range(1, 9):
-            text = chr(i//2 + 64) if i % 2 == 0 else str(i)
+            text = chr(i//2 + 64) if i % 2 == 0 else str(i//2 + 1)
             B_test_texts.append(visual.TextStim(win, text = str(text),
             height = conf['QUE_RADIUS'], 
             color = conf['STIM_LETTER_COLOR'],colorSpace = 'rgb255'))
@@ -226,7 +226,7 @@ def main():
     # B Trail
     B_texts = []
     for i in range(1, 27):
-            text = chr(i//2 + 64) if i % 2 == 0 else str(i)
+            text = chr(i//2 + 64) if i % 2 == 0 else str(i//2 + 1)
             B_texts.append(visual.TextStim(win, text = str(text),
             height = conf['QUE_RADIUS'], 
             color = conf['STIM_LETTER_COLOR'],colorSpace = 'rgb255'))
